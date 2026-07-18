@@ -1,0 +1,40 @@
+<svg viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <radialGradient id="bgGlow" cx="50%" cy="28%" r="75%">
+      <stop offset="0%" stop-color="#3A5A8C"/>
+      <stop offset="100%" stop-color="#2B4570"/>
+    </radialGradient>
+  </defs>
+
+  <!-- background -->
+  <rect x="0" y="0" width="512" height="512" rx="112" fill="url(#bgGlow)"/>
+
+  <!-- holding-hands connector -->
+  <path d="M 110 300 Q 157 322 204 302 Q 256 322 308 302 Q 355 322 402 300"
+        stroke="#4E6690" stroke-width="10" stroke-linecap="round" fill="none"/>
+
+  <!-- ===== MOM ===== -->
+  <path d="M 76 218 Q 68 300 86 404 L 134 404 Q 152 300 144 218 Z" fill="#5B3A22"/>
+  <path d="M 110 182 L 72 262 Q 90 302 110 302 Q 130 302 148 262 Z" fill="#4C9A6A"/>
+  <circle cx="110" cy="146" r="33" fill="#FBFBF2"/>
+  <path d="M 79 150 Q 74 96 110 92 Q 146 96 141 150 Q 141 116 110 116 Q 79 116 79 150 Z" fill="#5B3A22"/>
+
+  <!-- ===== TWIN 1 ===== -->
+  <path d="M 178 232 Q 172 300 184 404 L 224 404 Q 236 300 230 232 Z" fill="#E8544A"/>
+  <circle cx="204" cy="190" r="27" fill="#FBFBF2"/>
+  <circle cx="178" cy="196" r="12" fill="#8B5E3C"/>
+  <circle cx="230" cy="196" r="12" fill="#8B5E3C"/>
+  <path d="M 180 190 Q 176 160 204 158 Q 232 160 228 190 Q 228 168 204 168 Q 180 168 180 190 Z" fill="#8B5E3C"/>
+
+  <!-- ===== TWIN 2 ===== -->
+  <path d="M 282 232 Q 276 300 288 404 L 328 404 Q 340 300 334 232 Z" fill="#E8544A"/>
+  <circle cx="308" cy="190" r="27" fill="#FBFBF2"/>
+  <circle cx="282" cy="196" r="12" fill="#8B5E3C"/>
+  <circle cx="334" cy="196" r="12" fill="#8B5E3C"/>
+  <path d="M 284 190 Q 280 160 308 158 Q 336 160 332 190 Q 332 168 308 168 Q 284 168 284 190 Z" fill="#8B5E3C"/>
+
+  <!-- ===== DAD ===== -->
+  <path d="M 366 206 L 438 206 Q 452 300 434 404 L 370 404 Q 352 300 366 206 Z" fill="#FF8C42"/>
+  <circle cx="402" cy="140" r="36" fill="#FBFBF2"/>
+  <path d="M 368 138 Q 366 100 402 98 Q 438 100 436 138 Q 430 112 402 112 Q 374 112 368 138 Z" fill="#4A2F18"/>
+</svg>
