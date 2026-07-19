@@ -530,11 +530,12 @@ async function resolveFamilyMembership(){
   const user = state.session.user;
   state.hiddenModules = (user.user_metadata && user.user_metadata.hiddenModules) || [];
 
-  const { data: existing } = await db.from("family_members")
+  const { data: existing, error: existingErr } = await db.from("family_members")
     .select("family_id, families(name)")
     .eq("user_id", user.id)
     .eq("status", "active")
     .maybeSingle();
+  if (existingErr) console.error("resolveFamilyMembership: active-membership lookup failed", existingErr);
 
   if (existing){
     state.familyId = existing.family_id;
@@ -545,11 +546,12 @@ async function resolveFamilyMembership(){
   }
 
   // Not an active member yet — check for a pending invite matching their email.
-  const { data: invite } = await db.from("family_members")
+  const { data: invite, error: inviteErr } = await db.from("family_members")
     .select("id, family_id, families(name)")
     .eq("email", user.email)
     .eq("status", "invited")
     .maybeSingle();
+  if (inviteErr) console.error("resolveFamilyMembership: invite lookup failed", inviteErr);
 
   if (invite){
     const { error: claimError } = await db.from("family_members")
@@ -562,6 +564,7 @@ async function resolveFamilyMembership(){
       await loadFamilyMembers();
       return;
     }
+    console.error("resolveFamilyMembership: claiming invite failed", claimError);
   }
 
   // No membership and no invite — check whether they signed up asking to create a new family.
@@ -579,7 +582,7 @@ async function createFamilyForCurrentUser(name){
   const clean = name.trim();
   if (!clean) { state.familyStatus = "needs-family-name"; render(); return; }
   try{
-    const { data: family, error: famErr } = await db.from("families").insert({ name: clean }).select().single();
+    const { data: family, error: famErr } = await db.from("families").insert({ name: clean, created_by: user.id }).select().single();
     if (famErr) throw famErr;
     const { error: memErr } = await db.from("family_members").insert({
       family_id: family.id, email: user.email, user_id: user.id, status: "active",
