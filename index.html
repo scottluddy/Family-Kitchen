@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Family Kitchen</title>
+<title>Family</title>
 <link rel="icon" type="image/x-icon" href="favicon.ico" />
 <link rel="icon" type="image/png" sizes="32x32" href="icon-32.png" />
 <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png" />
@@ -50,13 +50,15 @@
   .header-title{ font-family:'Baloo 2', sans-serif; font-size:22px; font-weight:700; }
 
   .day-list{ padding:4px 20px 40px; display:flex; flex-direction:column; gap:10px; }
-  .day-row{ display:flex; align-items:center; gap:14px; border-radius:16px; padding:12px 14px; background:var(--surface); border:1px solid var(--line); }
+  .day-row{ display:flex; align-items:center; gap:14px; border-radius:16px; padding:12px 14px; background:var(--surface); border:1px solid var(--line); cursor:pointer; }
   .day-row.today{ border:2px solid var(--navy); background:#EEF2F8; }
   .day-meta{ width:76px; flex-shrink:0; }
   .today-tag{ font-size:10px; font-weight:800; letter-spacing:1px; color:var(--navy); margin-bottom:2px; }
   .day-name{ font-family:'Baloo 2', sans-serif; font-weight:700; font-size:15px; color:var(--text); }
   .day-date{ font-size:12px; color:var(--muted); }
-  .meal-input{ flex:1; border:none; background:transparent; font-size:16px; font-weight:600; color:var(--text); outline:none; min-width:0; }
+  .meal-summary{ flex:1; font-size:15px; font-weight:600; color:var(--text); min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .meal-summary-empty{ flex:1; font-size:14px; font-weight:600; color:var(--muted); }
+  .meal-summary-more{ font-size:12px; font-weight:700; color:var(--muted); margin-left:6px; }
 
   .tab-row{ display:flex; gap:8px; padding:4px 20px 14px; overflow-x:auto; align-items:center; }
   .tab{ font-weight:700; font-size:14px; padding:9px 16px; border-radius:999px; cursor:pointer; white-space:nowrap; flex-shrink:0; background:#fff; color:var(--text); border:1px solid var(--line); }
@@ -174,8 +176,8 @@
    Fill these in with your project's values (Project Settings > API in Supabase).
    The anon key is safe to expose in client-side code — it only has the
    permissions your Row Level Security policies grant it. */
-const SUPABASE_URL = "YOUR_SUPABASE_PROJECT_URL";
-const SUPABASE_ANON_KEY = "YOUR_SUPABASE_ANON_KEY";
+const SUPABASE_URL = "https://wbotaefcsxxlvbytmpxh.supabase.co";
+const SUPABASE_ANON_KEY = "sb_publishable_e1TCH4HPHgxASiYOa6zmyg_X4LmufIJ";
 
 const supabaseConfigured = SUPABASE_URL !== "YOUR_SUPABASE_PROJECT_URL" && SUPABASE_ANON_KEY !== "YOUR_SUPABASE_ANON_KEY";
 const db = supabaseConfigured ? supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
@@ -325,8 +327,10 @@ function debounce(fn, ms){
 const state = {
   view: "home",
   ready: false,
-  mealPlan: {},
-  mealPlanRecipeLinks: {},
+  mealPlan: {}, // { dateKey: [ {id, text, recipeId|null} ] }
+  mealDaySelectedDate: null, // dateKey when the full-screen meal day view is open, else null
+  mealDayAddMode: "closed", // "closed" | "choice" | "manual"
+  mealDraftText: "",
   lists: ["Main"],
   activeList: "Main",
   itemsByList: {},
@@ -369,8 +373,6 @@ const state = {
 };
 
 /* ---------- data actions ---------- */
-
-const saveMealPlanDebounced = debounce(() => saveJSON("mealplan-data", state.mealPlan), 500);
 
 function navigate(target){
   state.view = target;
@@ -749,17 +751,67 @@ async function saveRecipe(){
 async function deleteRecipe(id){
   state.recipes = state.recipes.filter(r => r.id !== id);
   state.recipeEditingId = null;
-  // Unlink any meal plan days pointing at this recipe.
+  // Unlink (but keep) any meal entries pointing at this recipe, across all days.
   let changed = false;
-  for (const k of Object.keys(state.mealPlanRecipeLinks)){
-    if (state.mealPlanRecipeLinks[k] === id){ delete state.mealPlanRecipeLinks[k]; changed = true; }
+  for (const dateKey of Object.keys(state.mealPlan)){
+    state.mealPlan[dateKey] = state.mealPlan[dateKey].map(m => {
+      if (m.recipeId === id){ changed = true; return { ...m, recipeId: null }; }
+      return m;
+    });
   }
   render();
   await saveJSON("recipes", state.recipes);
-  if (changed) await saveJSON("mealplan-recipe-links", state.mealPlanRecipeLinks);
+  if (changed) await saveJSON("mealplan-data", state.mealPlan);
 }
 
-/* ---------- meal plan <-> recipe linking ---------- */
+/* ---------- meal plan (full-screen day view, multiple meals per day) ---------- */
+
+function openMealDay(dateKey){
+  state.mealDaySelectedDate = dateKey;
+  state.mealDayAddMode = "closed";
+  render();
+}
+function closeMealDay(){
+  state.mealDaySelectedDate = null;
+  state.mealDayAddMode = "closed";
+  render();
+}
+function openAddMealChoice(){
+  state.mealDayAddMode = "choice";
+  render();
+}
+function openAddMealManual(){
+  state.mealDayAddMode = "manual";
+  state.mealDraftText = "";
+  state.pendingFocus = '[data-role="meal-draft-input"]';
+  render();
+}
+function cancelAddMeal(){
+  state.mealDayAddMode = "closed";
+  render();
+}
+async function addManualMeal(){
+  const text = state.mealDraftText.trim();
+  if (!text) return;
+  const dateKey = state.mealDaySelectedDate;
+  const newMeal = { id: `${Date.now()}-${Math.random().toString(36).slice(2,7)}`, text, recipeId: null };
+  state.mealPlan[dateKey] = [...(state.mealPlan[dateKey] || []), newMeal];
+  state.mealDayAddMode = "closed";
+  render();
+  await saveJSON("mealplan-data", state.mealPlan);
+}
+async function removeMeal(dateKey, mealId){
+  state.mealPlan[dateKey] = (state.mealPlan[dateKey] || []).filter(m => m.id !== mealId);
+  render();
+  await saveJSON("mealplan-data", state.mealPlan);
+}
+function goToRecipeFromMeal(recipeId){
+  const r = state.recipes.find(r => r.id === recipeId);
+  if (!r) return;
+  state.mealDaySelectedDate = null;
+  state.view = "recipes";
+  openRecipe(recipeId); // openRecipe() calls render() itself
+}
 
 function openRecipePicker(dateKey){
   state.recipePickerForDate = dateKey;
@@ -772,16 +824,17 @@ function closeRecipePicker(){
 async function pickRecipeForDate(dateKey, recipeId){
   const r = state.recipes.find(r => r.id === recipeId);
   if (!r) return;
-  state.mealPlan[dateKey] = r.name;
-  state.mealPlanRecipeLinks[dateKey] = recipeId;
+  const newMeal = { id: `${Date.now()}-${Math.random().toString(36).slice(2,7)}`, text: r.name, recipeId: r.id };
+  state.mealPlan[dateKey] = [...(state.mealPlan[dateKey] || []), newMeal];
   state.recipePickerForDate = null;
+  state.mealDayAddMode = "closed";
   render();
   await saveJSON("mealplan-data", state.mealPlan);
-  await saveJSON("mealplan-recipe-links", state.mealPlanRecipeLinks);
 }
-async function addRecipeIngredientsToGrocery(dateKey){
-  const recipeId = state.mealPlanRecipeLinks[dateKey];
-  const r = state.recipes.find(r => r.id === recipeId);
+async function addMealIngredientsToGrocery(dateKey, mealId){
+  const meal = (state.mealPlan[dateKey] || []).find(m => m.id === mealId);
+  if (!meal || !meal.recipeId) return;
+  const r = state.recipes.find(r => r.id === meal.recipeId);
   if (!r) return;
   const prevActive = state.activeList;
   state.activeList = "Main";
@@ -934,7 +987,7 @@ async function deleteEvent(id){
 function render(){
   const app = document.getElementById("app");
   if (!state.ready){
-    app.innerHTML = `<div class="loading">Loading the kitchen…</div>`;
+    app.innerHTML = `<div class="loading">Loading…</div>`;
     return;
   }
   let html = `<div class="app-shell">`;
@@ -954,11 +1007,14 @@ function render(){
   if (state.recipeEditingId){
     html += renderRecipeEditorOverlay();
   }
-  if (state.recipePickerForDate){
-    html += renderRecipePickerOverlay();
-  }
   if (state.calendarSelectedDate){
     html += renderDayOverlay();
+  }
+  if (state.mealDaySelectedDate){
+    html += renderMealDayOverlay();
+  }
+  if (state.recipePickerForDate){
+    html += renderRecipePickerOverlay();
   }
 
   app.innerHTML = html;
@@ -986,7 +1042,7 @@ function renderHome(){
 
   return `
     <div class="home-wrap">
-      <div class="eyebrow">FAMILY KITCHEN</div>
+      <div class="eyebrow">FAMILY</div>
       <h1 class="h1">What are we&nbsp;doing?</h1>
       <p class="subtitle">Plan meals, shop for groceries, and keep track together.</p>
       <div class="home-grid">${tiles}</div>
@@ -1008,28 +1064,86 @@ function renderMealPlan(){
   days.forEach((d, idx) => {
     const key = isoDate(d);
     const isToday = idx === 0;
-    const value = state.mealPlan[key] || "";
-    const linkedRecipeId = state.mealPlanRecipeLinks[key];
-    const linkedRecipe = linkedRecipeId ? state.recipes.find(r => r.id === linkedRecipeId) : null;
+    const meals = state.mealPlan[key] || [];
+    let summaryHtml;
+    if (meals.length === 0){
+      summaryHtml = `<div class="meal-summary-empty">No meals planned</div>`;
+    } else {
+      const first = escapeHtml(meals[0].text);
+      const more = meals.length > 1 ? `<span class="meal-summary-more">+${meals.length - 1} more</span>` : "";
+      summaryHtml = `<div class="meal-summary">${first}${more}</div>`;
+    }
     rows += `
-      <div class="day-row ${isToday ? "today" : ""}">
+      <div class="day-row ${isToday ? "today" : ""}" data-action="open-meal-day" data-date="${key}">
         <div class="day-meta">
           ${isToday ? `<div class="today-tag">TODAY</div>` : ""}
           <div class="day-name">${DAY_NAMES[d.getDay()]}</div>
           <div class="day-date">${MONTH_NAMES[d.getMonth()]} ${d.getDate()}</div>
         </div>
-        <input class="meal-input" placeholder="What's for dinner?" value="${escapeHtml(value)}"
-          data-role="meal-input" data-date="${key}" />
-        <div class="day-actions">
-          ${linkedRecipe ? `<button class="icon-btn" data-action="add-recipe-groceries" data-date="${key}" aria-label="Add ingredients to grocery list" title="Add ingredients to grocery list">${ICONS.cartAdd}</button>` : ""}
-          <button class="icon-btn ${linkedRecipe ? "filled" : ""}" data-action="open-recipe-picker" data-date="${key}" aria-label="Choose from recipes" title="Choose from recipes">${ICONS.bookSmall}</button>
-        </div>
+        ${summaryHtml}
+        ${ICONS.chevronRightSmall}
       </div>`;
   });
   return `
     <div class="view-wrap">
       ${renderBackHeader("Meal Plan", "var(--navy)")}
       <div class="day-list">${rows}</div>
+    </div>`;
+}
+
+function renderMealDayOverlay(){
+  const dateKey = state.mealDaySelectedDate;
+  const d = new Date(dateKey + "T00:00:00");
+  const niceDate = `${MONTH_FULL_NAMES[d.getMonth()]} ${d.getDate()}, ${d.getFullYear()}`;
+  const meals = state.mealPlan[dateKey] || [];
+
+  const mealsHtml = meals.length
+    ? meals.map(m => `
+        <div class="event-row" ${m.recipeId ? `data-action="goto-recipe-from-meal" data-recipe-id="${m.recipeId}"` : ""} style="${m.recipeId ? "" : "cursor:default;"}">
+          ${m.recipeId ? `<div class="event-dot" style="background:#7B5EA7"></div>` : `<div class="event-dot" style="background:var(--muted)"></div>`}
+          <div style="flex:1;">
+            <div class="event-row-name">${escapeHtml(m.text)}</div>
+            ${m.recipeId ? `<div class="event-row-time">From a recipe · tap to view</div>` : ""}
+          </div>
+          ${m.recipeId ? `<button class="icon-btn" data-action="add-meal-groceries" data-date="${dateKey}" data-id="${m.id}" aria-label="Add ingredients to grocery list" title="Add ingredients to grocery list">${ICONS.cartAdd}</button>` : ""}
+          <button class="remove-btn" data-action="remove-meal" data-date="${dateKey}" data-id="${m.id}" aria-label="Remove meal">${ICONS.x}</button>
+        </div>`).join("")
+    : `<div class="empty-state">No meals planned for this day yet.</div>`;
+
+  let addSectionHtml = "";
+  if (state.mealDayAddMode === "choice"){
+    addSectionHtml = `
+      <div style="display:flex; flex-direction:column; gap:10px; margin-top:14px;">
+        <button class="btn-primary" style="background:var(--navy);" data-action="open-add-meal-manual">Type a Meal</button>
+        <button class="btn-primary" style="background:#7B5EA7;" data-action="open-recipe-picker-from-meal" data-date="${dateKey}">Choose from Recipes</button>
+        <button class="picker-close" data-action="cancel-add-meal">Cancel</button>
+      </div>`;
+  } else if (state.mealDayAddMode === "manual"){
+    addSectionHtml = `
+      <div style="margin-top:14px;">
+        <input class="form-input" placeholder="e.g. Tacos" value="${escapeHtml(state.mealDraftText)}" data-role="meal-draft-input" />
+        <div style="display:flex; gap:10px; margin-top:10px;">
+          <button class="btn-primary" style="background:var(--navy);" data-action="save-manual-meal">Add Meal</button>
+          <button class="picker-close" style="flex:none;" data-action="cancel-add-meal">Cancel</button>
+        </div>
+      </div>`;
+  } else {
+    addSectionHtml = `<button class="event-add-btn" style="background:var(--navy);" data-action="open-add-meal-choice">${ICONS.plusWhite} Add Meal</button>`;
+  }
+
+  return `
+    <div class="picker-overlay" style="align-items:stretch;">
+      <div class="picker-sheet" style="border-radius:0; max-height:100vh; height:100%; max-width:480px; margin:0 auto; display:flex; flex-direction:column;">
+        <div class="header" style="padding:4px 0 12px;">
+          <button class="back-btn" data-action="close-meal-day" aria-label="Back">${ICONS.arrowLeft}</button>
+          <div class="header-title" style="color:var(--navy); font-size:17px;">${niceDate}</div>
+          <div style="width:36px"></div>
+        </div>
+        <div style="padding:0 20px 30px; overflow-y:auto; flex:1;">
+          <div style="display:flex; flex-direction:column; gap:8px;">${mealsHtml}</div>
+          ${addSectionHtml}
+        </div>
+      </div>
     </div>`;
 }
 
@@ -1504,9 +1618,18 @@ document.addEventListener("click", (e) => {
   else if (action === "toggle-item") toggleItem(state.activeList, el.dataset.id);
   else if (action === "remove-item") removeItem(state.activeList, el.dataset.id);
   else if (action === "open-recipe-picker") openRecipePicker(el.dataset.date);
+  else if (action === "open-recipe-picker-from-meal") openRecipePicker(el.dataset.date);
   else if (action === "close-recipe-picker") closeRecipePicker();
   else if (action === "pick-recipe") pickRecipeForDate(el.dataset.date, el.dataset.recipeId);
-  else if (action === "add-recipe-groceries") addRecipeIngredientsToGrocery(el.dataset.date);
+  else if (action === "open-meal-day") openMealDay(el.dataset.date);
+  else if (action === "close-meal-day") closeMealDay();
+  else if (action === "open-add-meal-choice") openAddMealChoice();
+  else if (action === "open-add-meal-manual") openAddMealManual();
+  else if (action === "cancel-add-meal") cancelAddMeal();
+  else if (action === "save-manual-meal") addManualMeal();
+  else if (action === "remove-meal") removeMeal(el.dataset.date, el.dataset.id);
+  else if (action === "add-meal-groceries") addMealIngredientsToGrocery(el.dataset.date, el.dataset.id);
+  else if (action === "goto-recipe-from-meal") goToRecipeFromMeal(el.dataset.recipeId);
   else if (action === "new-recipe") openNewRecipe();
   else if (action === "open-recipe") openRecipe(el.dataset.id);
   else if (action === "close-recipe-editor") closeRecipeEditor();
@@ -1542,13 +1665,8 @@ document.addEventListener("click", (e) => {
 
 document.addEventListener("input", (e) => {
   const el = e.target;
-  if (el.dataset.role === "meal-input"){
-    state.mealPlan[el.dataset.date] = el.value;
-    if (state.mealPlanRecipeLinks[el.dataset.date]) {
-      delete state.mealPlanRecipeLinks[el.dataset.date];
-      saveJSON("mealplan-recipe-links", state.mealPlanRecipeLinks);
-    }
-    saveMealPlanDebounced();
+  if (el.dataset.role === "meal-draft-input"){
+    state.mealDraftText = el.value;
   } else if (el.dataset.role === "add-item-input"){
     state.groceryInput = el.value;
     refreshSuggestionsOnly();
@@ -1603,6 +1721,8 @@ document.addEventListener("keydown", (e) => {
     addTodoItem(state.todoInput);
   } else if (el.dataset.role === "event-name-input" && e.key === "Enter" && state.eventDraftName.trim()){
     saveEvent();
+  } else if (el.dataset.role === "meal-draft-input" && e.key === "Enter" && state.mealDraftText.trim()){
+    addManualMeal();
   }
 });
 
@@ -1625,8 +1745,25 @@ function refreshSuggestionsOnly(){
 /* ---------- init + live sync ---------- */
 
 async function loadAllData(){
-  const mealPlan = await loadJSON("mealplan-data", {});
-  const mealPlanRecipeLinks = await loadJSON("mealplan-recipe-links", {});
+  const rawMealPlan = await loadJSON("mealplan-data", {});
+  const oldRecipeLinks = await loadJSON("mealplan-recipe-links", {});
+  // Migrate old format ({ dateKey: "meal text" }) to the new multi-meal format
+  // ({ dateKey: [ {id, text, recipeId} ] }). Already-migrated days (arrays) pass through untouched.
+  const mealPlan = {};
+  let needsMigrationSave = false;
+  for (const dateKey of Object.keys(rawMealPlan)){
+    const val = rawMealPlan[dateKey];
+    if (Array.isArray(val)){
+      mealPlan[dateKey] = val;
+    } else if (typeof val === "string" && val.trim()){
+      mealPlan[dateKey] = [{
+        id: `${Date.now()}-${Math.random().toString(36).slice(2,7)}`,
+        text: val,
+        recipeId: oldRecipeLinks[dateKey] || null,
+      }];
+      needsMigrationSave = true;
+    }
+  }
   const lists = await loadJSON("grocery-lists", ["Main"]);
   const itemsByList = {};
   const libraryByList = {};
@@ -1643,13 +1780,14 @@ async function loadAllData(){
   const events = await loadJSON("calendar-events", []);
 
   state.mealPlan = mealPlan;
-  state.mealPlanRecipeLinks = mealPlanRecipeLinks;
   state.lists = lists;
   state.itemsByList = itemsByList;
   state.libraryByList = libraryByList;
   state.recipes = recipes;
   state.todoItems = { todo: todoTodo, discuss: todoDiscuss };
   state.events = events;
+
+  if (needsMigrationSave) await saveJSON("mealplan-data", state.mealPlan);
 }
 
 async function init(){
