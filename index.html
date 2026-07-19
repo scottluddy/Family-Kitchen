@@ -40,6 +40,24 @@
   .subtitle{ font-size:15px; color:var(--muted); margin:0 0 36px 0; }
 
   .home-grid{ display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+  .home-top-row{ display:flex; align-items:center; justify-content:space-between; margin-bottom:22px; }
+
+  .module-toggle-row{ display:flex; align-items:center; justify-content:space-between; padding:12px 4px; border-bottom:1px solid var(--line); }
+  .module-toggle-row:last-child{ border-bottom:none; }
+  .module-toggle-label{ display:flex; align-items:center; gap:10px; font-size:15px; font-weight:600; color:var(--text); }
+  .module-toggle-dot{ width:10px; height:10px; border-radius:999px; flex-shrink:0; }
+  .switch{ position:relative; width:44px; height:26px; flex-shrink:0; }
+  .switch input{ opacity:0; width:0; height:0; }
+  .switch-track{ position:absolute; inset:0; background:var(--line); border-radius:999px; cursor:pointer; transition:background 0.15s; }
+  .switch input:checked + .switch-track{ background:var(--navy); }
+  .switch-thumb{ position:absolute; top:3px; left:3px; width:20px; height:20px; background:#fff; border-radius:999px; transition:transform 0.15s; box-shadow:0 1px 3px rgba(0,0,0,0.2); }
+  .switch input:checked ~ .switch-track .switch-thumb{ transform:translateX(18px); }
+
+  .member-row{ display:flex; align-items:center; justify-content:space-between; padding:10px 0; }
+  .member-email{ font-size:14px; font-weight:600; color:var(--text); }
+  .member-status{ font-size:11px; font-weight:800; letter-spacing:0.3px; text-transform:uppercase; padding:3px 8px; border-radius:999px; margin-left:8px; }
+  .member-status.active{ background:#E6F4EA; color:#3B7D54; }
+  .member-status.invited{ background:#FFF3CD; color:#7A5B00; }
 
   .login-wrap{ max-width:400px; margin:0 auto; width:100%; padding:80px 24px 24px; box-sizing:border-box; }
   .login-title{ font-family:'Baloo 2', sans-serif; font-size:26px; font-weight:700; color:var(--text); text-align:center; margin:6px 0 28px; }
@@ -260,6 +278,7 @@ const ICONS = {
   listCheck: '<svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6h11"/><path d="M9 12h11"/><path d="M9 18h11"/><path d="m3 6 1 1 2-2"/><path d="m3 12 1 1 2-2"/><path d="m3 18 1 1 2-2"/></svg>',
   trash: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#E8544A" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>',
   pencil: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#7B5EA7" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>',
+  gear: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#24303F" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z"/></svg>',
   calendarGrid: '<svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><line x1="9" y1="10" x2="9" y2="22"/><line x1="15" y1="10" x2="15" y2="22"/><line x1="3" y1="16" x2="21" y2="16"/></svg>',
   chevronLeft: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#24303F" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>',
   chevronRightSmall: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#24303F" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>',
@@ -272,7 +291,9 @@ const memoryFallback = {}; // used if Supabase isn't configured/reachable, so th
 async function loadJSON(key, fallback){
   if (!db) return (key in memoryFallback) ? memoryFallback[key] : fallback;
   try{
-    const { data, error } = await db.from("family_kitchen_kv").select("value").eq("key", key).maybeSingle();
+    let query = db.from("family_kitchen_kv").select("value").eq("key", key);
+    query = state.familyId ? query.eq("family_id", state.familyId) : query.is("family_id", null);
+    const { data, error } = await query.maybeSingle();
     if (error) throw error;
     if (data && data.value !== null && data.value !== undefined) return data.value;
     return fallback;
@@ -286,7 +307,7 @@ async function saveJSON(key, value){
   lastLocalWriteAt = Date.now();
   if (!db) return;
   try{
-    const { error } = await db.from("family_kitchen_kv").upsert({ key, value, updated_at: new Date().toISOString() });
+    const { error } = await db.from("family_kitchen_kv").upsert({ key, value, family_id: state.familyId, updated_at: new Date().toISOString() });
     if (error) throw error;
   }catch(e){
     console.error("Supabase save failed for", key, e);
@@ -317,7 +338,7 @@ function addMonthOffset(year, monthIndex, offset){
 function buildInitialCalendarMonths(){
   const now = new Date();
   const arr = [];
-  for (let i = -1; i <= 2; i++){ arr.push(addMonthOffset(now.getFullYear(), now.getMonth(), i)); }
+  for (let i = -12; i <= 24; i++){ arr.push(addMonthOffset(now.getFullYear(), now.getMonth(), i)); }
   return arr;
 }
 // Returns an array of weeks (each an array of 7 Date objects) covering the full
@@ -388,7 +409,7 @@ const state = {
   calendarMonths: (() => {
     const now = new Date();
     const arr = [];
-    for (let i = -1; i <= 2; i++){ arr.push(addMonthOffset(now.getFullYear(), now.getMonth(), i)); }
+    for (let i = -12; i <= 24; i++){ arr.push(addMonthOffset(now.getFullYear(), now.getMonth(), i)); }
     return arr;
   })(),
   calendarScrollToKey: null, // "year-monthIndex" to scroll into view after next render, else null
@@ -404,13 +425,31 @@ const state = {
 
   // Auth
   session: null,
+  authMode: "login", // "login" | "signup"
   loginEmail: "",
   loginPassword: "",
   loginError: "",
   loginLoading: false,
+  signupFamilyName: "",
+  signupNotice: "", // shown after signup, e.g. "check your email"
+
+  // Family membership (resolved after login)
+  familyId: null,
+  familyName: "",
+  familyStatus: "resolving", // "resolving" | "ready" | "needs-family-name" | "error"
+  familyMembers: [], // [{id, email, status, user_id}]
+  inviteEmailInput: "",
+  hiddenModules: [], // module target keys hidden from the home screen, per-user preference
 };
 
 /* ---------- auth ---------- */
+
+function switchAuthMode(mode){
+  state.authMode = mode;
+  state.loginError = "";
+  state.signupNotice = "";
+  render();
+}
 
 async function attemptLogin(){
   const email = state.loginEmail.trim();
@@ -432,6 +471,41 @@ async function attemptLogin(){
     render();
   }
 }
+
+async function attemptSignup(){
+  const email = state.loginEmail.trim();
+  const password = state.loginPassword;
+  const familyName = state.signupFamilyName.trim();
+  if (!email || !password){ state.loginError = "Enter an email and password."; render(); return; }
+  if (password.length < 6){ state.loginError = "Password should be at least 6 characters."; render(); return; }
+  state.loginLoading = true;
+  state.loginError = "";
+  render();
+  try{
+    const { data, error } = await db.auth.signUp({
+      email, password,
+      options: { data: { pendingFamilyName: familyName } },
+    });
+    if (error) throw error;
+    state.loginLoading = false;
+    if (data.session){
+      // Email confirmation is off for this project — go straight in.
+      state.session = data.session;
+      await startApp();
+    } else {
+      // Standard case: confirmation email sent, no session yet.
+      state.authMode = "login";
+      state.loginPassword = "";
+      state.signupNotice = "Check your email to confirm your account, then sign in here.";
+      render();
+    }
+  }catch(e){
+    state.loginLoading = false;
+    state.loginError = e && e.message ? e.message : "Couldn't sign up — please try again.";
+    render();
+  }
+}
+
 async function logout(){
   if (db) await db.auth.signOut();
   state.session = null;
@@ -439,7 +513,125 @@ async function logout(){
   state.loginEmail = "";
   state.loginPassword = "";
   state.loginError = "";
+  state.authMode = "login";
+  state.signupNotice = "";
+  state.familyId = null;
+  state.familyName = "";
+  state.familyStatus = "resolving";
+  state.familyMembers = [];
+  state.hiddenModules = [];
   render();
+}
+
+// Figures out which family the signed-in user belongs to: an existing active
+// membership, a family they're creating for the first time (from signup), or
+// an invite waiting for their email address to claim.
+async function resolveFamilyMembership(){
+  const user = state.session.user;
+  state.hiddenModules = (user.user_metadata && user.user_metadata.hiddenModules) || [];
+
+  const { data: existing } = await db.from("family_members")
+    .select("family_id, families(name)")
+    .eq("user_id", user.id)
+    .eq("status", "active")
+    .maybeSingle();
+
+  if (existing){
+    state.familyId = existing.family_id;
+    state.familyName = existing.families ? existing.families.name : "";
+    state.familyStatus = "ready";
+    await loadFamilyMembers();
+    return;
+  }
+
+  // Not an active member yet — check for a pending invite matching their email.
+  const { data: invite } = await db.from("family_members")
+    .select("id, family_id, families(name)")
+    .eq("email", user.email)
+    .eq("status", "invited")
+    .maybeSingle();
+
+  if (invite){
+    const { error: claimError } = await db.from("family_members")
+      .update({ user_id: user.id, status: "active" })
+      .eq("id", invite.id);
+    if (!claimError){
+      state.familyId = invite.family_id;
+      state.familyName = invite.families ? invite.families.name : "";
+      state.familyStatus = "ready";
+      await loadFamilyMembers();
+      return;
+    }
+  }
+
+  // No membership and no invite — check whether they signed up asking to create a new family.
+  const pendingName = (user.user_metadata && user.user_metadata.pendingFamilyName) || "";
+  if (pendingName){
+    await createFamilyForCurrentUser(pendingName);
+    return;
+  }
+
+  state.familyStatus = "needs-family-name";
+}
+
+async function createFamilyForCurrentUser(name){
+  const user = state.session.user;
+  const clean = name.trim();
+  if (!clean) { state.familyStatus = "needs-family-name"; render(); return; }
+  try{
+    const { data: family, error: famErr } = await db.from("families").insert({ name: clean }).select().single();
+    if (famErr) throw famErr;
+    const { error: memErr } = await db.from("family_members").insert({
+      family_id: family.id, email: user.email, user_id: user.id, status: "active",
+    });
+    if (memErr) throw memErr;
+    state.familyId = family.id;
+    state.familyName = family.name;
+    state.familyStatus = "ready";
+    await loadFamilyMembers();
+    render();
+  }catch(e){
+    console.error("Family creation failed", e);
+    state.familyStatus = "needs-family-name";
+    state.loginError = "Couldn't create the family — please try again.";
+    render();
+  }
+}
+
+async function loadFamilyMembers(){
+  if (!state.familyId) return;
+  const { data } = await db.from("family_members").select("id, email, status").eq("family_id", state.familyId).order("created_at");
+  state.familyMembers = data || [];
+}
+
+async function addFamilyMemberInvite(){
+  const email = state.inviteEmailInput.trim().toLowerCase();
+  if (!email || !state.familyId) return;
+  if (state.familyMembers.some(m => m.email.toLowerCase() === email)){
+    state.inviteEmailInput = "";
+    render();
+    return;
+  }
+  const { error } = await db.from("family_members").insert({ family_id: state.familyId, email, status: "invited" });
+  if (!error){
+    state.inviteEmailInput = "";
+    await loadFamilyMembers();
+  }
+  render();
+}
+async function removeFamilyMemberInvite(id){
+  await db.from("family_members").delete().eq("id", id).eq("status", "invited");
+  await loadFamilyMembers();
+  render();
+}
+
+async function toggleModuleVisibility(target){
+  const hidden = state.hiddenModules.includes(target);
+  state.hiddenModules = hidden ? state.hiddenModules.filter(t => t !== target) : [...state.hiddenModules, target];
+  render();
+  if (db){
+    await db.auth.updateUser({ data: { hiddenModules: state.hiddenModules } });
+  }
 }
 
 /* ---------- data actions ---------- */
@@ -1009,40 +1201,6 @@ function jumpToCurrentMonth(){
   render();
 }
 
-let calendarLoadingMore = false;
-function handleCalendarScroll(e){
-  if (calendarLoadingMore) return;
-  const el = e.target;
-  const nearTop = el.scrollTop < 400;
-  const nearBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 400;
-  if (!nearTop && !nearBottom) return;
-
-  calendarLoadingMore = true;
-  const oldScrollTop = el.scrollTop;
-  const oldScrollHeight = el.scrollHeight;
-
-  if (nearTop){
-    const first = state.calendarMonths[0];
-    const added = [addMonthOffset(first.year, first.monthIndex, -2), addMonthOffset(first.year, first.monthIndex, -1)];
-    state.calendarMonths = [...added, ...state.calendarMonths];
-    render();
-    requestAnimationFrame(() => {
-      const newEl = document.getElementById("calendar-scroll");
-      if (newEl){
-        const heightDiff = newEl.scrollHeight - oldScrollHeight;
-        newEl.scrollTop = oldScrollTop + heightDiff;
-      }
-      calendarLoadingMore = false;
-    });
-  } else {
-    const last = state.calendarMonths[state.calendarMonths.length - 1];
-    const added = [addMonthOffset(last.year, last.monthIndex, 1), addMonthOffset(last.year, last.monthIndex, 2)];
-    state.calendarMonths = [...state.calendarMonths, ...added];
-    render();
-    requestAnimationFrame(() => { calendarLoadingMore = false; });
-  }
-}
-
 function openDay(dateKey){
   state.calendarSelectedDate = dateKey;
   state.dayOverlayMode = "list";
@@ -1126,6 +1284,15 @@ function render(){
     }
     return;
   }
+  if (supabaseConfigured && state.session && state.familyStatus !== "ready"){
+    app.innerHTML = `<div class="app-shell">${renderFamilySetup()}</div>`;
+    if (state.pendingFocus){
+      const el = app.querySelector(state.pendingFocus);
+      if (el) el.focus();
+      state.pendingFocus = null;
+    }
+    return;
+  }
   let html = `<div class="app-shell">`;
   if (!supabaseConfigured){
     html += `<div style="background:#FFF3CD; color:#7A5B00; font-size:13px; font-weight:700; text-align:center; padding:8px 16px;">
@@ -1138,6 +1305,7 @@ function render(){
   else if (state.view === "recipes") html += renderRecipes();
   else if (state.view === "todo") html += renderTodo();
   else if (state.view === "calendar") html += renderCalendar();
+  else if (state.view === "account") html += renderAccount();
   html += `</div>`;
 
   if (state.recipeEditingId){
@@ -1162,41 +1330,70 @@ function render(){
   }
 
   const calendarScrollEl = document.getElementById("calendar-scroll");
-  if (calendarScrollEl){
-    calendarScrollEl.addEventListener("scroll", handleCalendarScroll);
-    if (state.calendarScrollToKey){
-      const target = calendarScrollEl.querySelector(`[data-month-key="${state.calendarScrollToKey}"]`);
-      if (target) target.scrollIntoView({ block: "start" });
-      state.calendarScrollToKey = null;
-    }
+  if (calendarScrollEl && state.calendarScrollToKey){
+    const target = calendarScrollEl.querySelector(`[data-month-key="${state.calendarScrollToKey}"]`);
+    if (target) target.scrollIntoView({ block: "start" });
+    state.calendarScrollToKey = null;
   }
 }
 
 function renderLogin(){
+  const isSignup = state.authMode === "signup";
   return `
     <div class="login-wrap">
       <div class="eyebrow" style="text-align:center;">FAMILY</div>
-      <div class="login-title">Sign in</div>
+      <div class="login-title">${isSignup ? "Create an account" : "Sign in"}</div>
       <div class="login-card">
+        ${state.signupNotice ? `<div style="background:#E9F5F5; color:#1F6E70; font-size:13px; font-weight:600; padding:10px 12px; border-radius:10px; margin-bottom:14px;">${escapeHtml(state.signupNotice)}</div>` : ""}
         <div class="form-label" style="margin-top:0;">Email</div>
         <input class="form-input" type="email" autocomplete="username" placeholder="you@example.com" value="${escapeHtml(state.loginEmail)}" data-role="login-email-input" ${state.loginLoading ? "disabled" : ""} />
         <div class="form-label">Password</div>
-        <input class="form-input" type="password" autocomplete="current-password" placeholder="Password" value="${escapeHtml(state.loginPassword)}" data-role="login-password-input" ${state.loginLoading ? "disabled" : ""} />
+        <input class="form-input" type="password" autocomplete="${isSignup ? "new-password" : "current-password"}" placeholder="Password" value="${escapeHtml(state.loginPassword)}" data-role="login-password-input" ${state.loginLoading ? "disabled" : ""} />
+        ${isSignup ? `
+          <div class="form-label">Family name <span style="text-transform:none; font-weight:600; color:var(--muted);">(only if you're starting a new one)</span></div>
+          <input class="form-input" placeholder="e.g. The Smith Family" value="${escapeHtml(state.signupFamilyName)}" data-role="signup-family-input" ${state.loginLoading ? "disabled" : ""} />
+          <div style="font-size:12px; color:var(--muted); margin-top:6px;">Already invited by a family member? Leave this blank — we'll match you up by email automatically.</div>
+        ` : ""}
         ${state.loginError ? `<div style="color:var(--red); font-size:13px; font-weight:600; margin-top:10px;">${escapeHtml(state.loginError)}</div>` : ""}
-        <button class="btn-primary" style="background:var(--navy); width:100%; margin-top:16px;" data-action="submit-login" ${state.loginLoading ? "disabled" : ""}>${state.loginLoading ? "Signing in…" : "Sign In"}</button>
+        <button class="btn-primary" style="background:var(--navy); width:100%; margin-top:16px;" data-action="${isSignup ? "submit-signup" : "submit-login"}" ${state.loginLoading ? "disabled" : ""}>
+          ${state.loginLoading ? (isSignup ? "Creating account…" : "Signing in…") : (isSignup ? "Sign Up" : "Sign In")}
+        </button>
+        <button class="logout-link" data-action="switch-auth-mode" data-mode="${isSignup ? "login" : "signup"}">${isSignup ? "Already have an account? Sign in" : "New family? Create an account"}</button>
       </div>
     </div>`;
 }
 
+function renderFamilySetup(){
+  if (state.familyStatus === "resolving"){
+    return `<div class="login-wrap"><div class="eyebrow" style="text-align:center;">FAMILY</div><div class="loading" style="min-height:auto; padding:40px 0;">Setting things up…</div></div>`;
+  }
+  // "needs-family-name": signed in, but no active membership and no invite matched their email.
+  return `
+    <div class="login-wrap">
+      <div class="eyebrow" style="text-align:center;">FAMILY</div>
+      <div class="login-title">One more step</div>
+      <div class="login-card">
+        <div style="font-size:14px; color:var(--text); margin-bottom:14px; line-height:1.4;">We couldn't find a family for your account. If a family member already invited you, double-check you're using the exact email they added. Otherwise, start a new family below.</div>
+        <div class="form-label" style="margin-top:0;">Family name</div>
+        <input class="form-input" placeholder="e.g. The Smith Family" value="${escapeHtml(state.signupFamilyName)}" data-role="signup-family-input" />
+        ${state.loginError ? `<div style="color:var(--red); font-size:13px; font-weight:600; margin-top:10px;">${escapeHtml(state.loginError)}</div>` : ""}
+        <button class="btn-primary" style="background:var(--navy); width:100%; margin-top:16px;" data-action="submit-create-family">Create Family</button>
+        <button class="logout-link" data-action="logout">Sign out</button>
+      </div>
+    </div>`;
+}
+
+const HOME_MODULES = [
+  { target: "meal", color: "var(--navy)", icon: ICONS.calendar, label: "Meal Plan" },
+  { target: "grocery", color: "var(--orange)", icon: ICONS.cart, label: "Grocery" },
+  { target: "recipes", color: "#7B5EA7", icon: ICONS.book, label: "Recipes" },
+  { target: "todo", color: "#3B7D54", icon: ICONS.listCheck, label: "To-Do / To-Discuss" },
+  { target: "calendar", color: "#1F8A8C", icon: ICONS.calendarGrid, label: "Calendar" },
+];
+
 function renderHome(){
-  const modules = [
-    { target: "meal", color: "var(--navy)", icon: ICONS.calendar, label: "Meal Plan" },
-    { target: "grocery", color: "var(--orange)", icon: ICONS.cart, label: "Grocery" },
-    { target: "recipes", color: "#7B5EA7", icon: ICONS.book, label: "Recipes" },
-    { target: "todo", color: "#3B7D54", icon: ICONS.listCheck, label: "To-Do / To-Discuss" },
-    { target: "calendar", color: "#1F8A8C", icon: ICONS.calendarGrid, label: "Calendar" },
-  ];
-  const tiles = modules.map(m => `
+  const visibleModules = HOME_MODULES.filter(m => !state.hiddenModules.includes(m.target));
+  const tiles = visibleModules.map(m => `
     <button class="app-tile" style="background:${m.color}" data-action="nav" data-target="${m.target}">
       <div class="app-tile-icon">${m.icon}</div>
       <div class="app-tile-label">${m.label}</div>
@@ -1204,9 +1401,71 @@ function renderHome(){
 
   return `
     <div class="home-wrap">
-      <div class="eyebrow" style="margin-bottom:22px;">FAMILY</div>
-      <div class="home-grid">${tiles}</div>
-      ${supabaseConfigured ? `<button class="logout-link" data-action="logout">Sign out</button>` : ""}
+      <div class="home-top-row">
+        <div class="eyebrow" style="margin-bottom:0;">FAMILY</div>
+        ${supabaseConfigured ? `<button class="icon-btn" data-action="nav" data-target="account" aria-label="Account">${ICONS.gear}</button>` : ""}
+      </div>
+      ${visibleModules.length === 0
+        ? `<div class="empty-state" style="padding:40px 0;">All modules are hidden. Go to your account settings to bring some back.</div>`
+        : `<div class="home-grid">${tiles}</div>`}
+    </div>`;
+}
+
+function renderAccount(){
+  const email = state.session ? state.session.user.email : "";
+
+  const toggleRows = HOME_MODULES.map(m => {
+    const visible = !state.hiddenModules.includes(m.target);
+    return `
+      <div class="module-toggle-row">
+        <div class="module-toggle-label">
+          <span class="module-toggle-dot" style="background:${m.color.startsWith("var(") ? "#2B4570" : m.color}"></span>
+          ${m.label}
+        </div>
+        <label class="switch">
+          <input type="checkbox" data-action="toggle-module" data-target="${m.target}" ${visible ? "checked" : ""} />
+          <span class="switch-track"><span class="switch-thumb"></span></span>
+        </label>
+      </div>`;
+  }).join("");
+
+  const memberRows = state.familyMembers.length
+    ? state.familyMembers.map(m => `
+        <div class="member-row">
+          <div class="member-email">${escapeHtml(m.email)}</div>
+          <div style="display:flex; align-items:center;">
+            <span class="member-status ${m.status}">${m.status === "active" ? "Active" : "Invited"}</span>
+            ${m.status === "invited" ? `<button class="remove-btn" data-action="remove-invite" data-id="${m.id}" aria-label="Remove invite">${ICONS.x}</button>` : ""}
+          </div>
+        </div>`).join("")
+    : `<div class="empty-state" style="padding:12px 0;">No family members yet.</div>`;
+
+  return `
+    <div class="view-wrap">
+      ${renderBackHeader("Account", "var(--navy)")}
+      <div style="padding:0 20px 40px;">
+        <div class="recipe-section-label" style="margin-top:0;">Signed in as</div>
+        <div style="font-size:15px; font-weight:600; color:var(--text); margin-bottom:20px;">${escapeHtml(email)}</div>
+
+        ${state.familyName ? `
+          <div class="recipe-section-label">Family</div>
+          <div style="font-size:15px; font-weight:600; color:var(--text); margin-bottom:8px;">${escapeHtml(state.familyName)}</div>
+
+          <div class="recipe-section-label" style="margin-top:16px;">Members</div>
+          <div style="background:#fff; border:1px solid var(--line); border-radius:14px; padding:4px 14px; margin-bottom:10px;">${memberRows}</div>
+
+          <div class="add-box">
+            <input class="add-input" type="email" placeholder="Invite by email…" value="${escapeHtml(state.inviteEmailInput)}" data-role="invite-email-input" />
+            <button class="add-btn" style="background:var(--navy)" data-action="add-invite" aria-label="Add invite">${ICONS.plusWhite}</button>
+          </div>
+          <div style="font-size:12px; color:var(--muted); margin-top:8px;">Invited members can sign up using this exact email address to join automatically.</div>
+        ` : ""}
+
+        <div class="recipe-section-label" style="margin-top:24px;">Home Screen Modules</div>
+        <div style="background:#fff; border:1px solid var(--line); border-radius:14px; padding:2px 14px;">${toggleRows}</div>
+
+        <button class="btn-danger" style="width:100%; margin-top:28px;" data-action="logout">Sign Out</button>
+      </div>
     </div>`;
 }
 
@@ -1854,6 +2113,11 @@ document.addEventListener("click", (e) => {
   else if (action === "toggle-todo") toggleTodoItem(el.dataset.id);
   else if (action === "remove-todo") removeTodoItem(el.dataset.id);
   else if (action === "submit-login") attemptLogin();
+  else if (action === "submit-signup") attemptSignup();
+  else if (action === "switch-auth-mode") switchAuthMode(el.dataset.mode);
+  else if (action === "submit-create-family") submitCreateFamily();
+  else if (action === "add-invite") addFamilyMemberInvite();
+  else if (action === "remove-invite") removeFamilyMemberInvite(el.dataset.id);
   else if (action === "logout") logout();
   else if (action === "calendar-today") jumpToCurrentMonth();
   else if (action === "open-day") openDay(el.dataset.date);
@@ -1871,6 +2135,10 @@ document.addEventListener("input", (e) => {
     state.loginEmail = el.value;
   } else if (el.dataset.role === "login-password-input"){
     state.loginPassword = el.value;
+  } else if (el.dataset.role === "signup-family-input"){
+    state.signupFamilyName = el.value;
+  } else if (el.dataset.role === "invite-email-input"){
+    state.inviteEmailInput = el.value;
   } else if (el.dataset.role === "meal-draft-input"){
     state.mealDraftText = el.value;
   } else if (el.dataset.role === "add-item-input"){
@@ -1907,13 +2175,21 @@ document.addEventListener("change", (e) => {
   const el = e.target;
   if (el.dataset.action === "change-category"){
     changeItemCategory(state.activeList, el.dataset.id, el.value);
+  } else if (el.dataset.action === "toggle-module"){
+    toggleModuleVisibility(el.dataset.target);
   }
 });
 
 document.addEventListener("keydown", (e) => {
   const el = e.target;
   if ((el.dataset.role === "login-email-input" || el.dataset.role === "login-password-input") && e.key === "Enter"){
-    attemptLogin();
+    if (state.authMode === "signup") attemptSignup(); else attemptLogin();
+  } else if (el.dataset.role === "signup-family-input" && e.key === "Enter"){
+    if (state.view === "account" || !state.session) { /* no-op on account page */ }
+    else if (state.familyStatus === "needs-family-name") submitCreateFamily();
+    else attemptSignup();
+  } else if (el.dataset.role === "invite-email-input" && e.key === "Enter" && state.inviteEmailInput.trim()){
+    addFamilyMemberInvite();
   } else if (el.dataset.role === "add-item-input" && e.key === "Enter" && state.groceryInput.trim()){
     submitItem(state.groceryInput);
   } else if (el.dataset.role === "new-list-input"){
@@ -1998,19 +2274,43 @@ async function loadAllData(){
   if (needsMigrationSave) await saveJSON("mealplan-data", state.mealPlan);
 }
 
-async function startApp(){
+async function finishStartup(){
   await loadAllData();
   state.ready = true;
   render();
 
   if (db){
     db.channel("family_kitchen_kv_changes")
-      .on("postgres_changes", { event: "*", schema: "public", table: "family_kitchen_kv" }, () => {
+      .on("postgres_changes", {
+        event: "*", schema: "public", table: "family_kitchen_kv",
+        ...(state.familyId ? { filter: `family_id=eq.${state.familyId}` } : {}),
+      }, () => {
         // Ignore events caused by our own recent writes to avoid clobbering in-progress typing.
         if (Date.now() - lastLocalWriteAt < 800) return;
         loadAllData().then(render);
       })
       .subscribe();
+  }
+}
+
+async function startApp(){
+  if (db && state.session){
+    state.ready = true;
+    render(); // shows a brief "resolving" state if needed
+    await resolveFamilyMembership();
+    if (state.familyStatus !== "ready"){
+      render();
+      return;
+    }
+  }
+  await finishStartup();
+}
+
+async function submitCreateFamily(){
+  state.loginError = "";
+  await createFamilyForCurrentUser(state.signupFamilyName);
+  if (state.familyStatus === "ready"){
+    await finishStartup();
   }
 }
 
