@@ -139,7 +139,7 @@
   .picker-empty{ font-size:14px; color:var(--muted); text-align:center; padding:20px 8px; }
   .picker-close{ display:block; width:100%; text-align:center; margin-top:10px; font-size:14px; font-weight:700; color:var(--muted); background:none; border:none; padding:10px; cursor:pointer; }
 
-  .recipe-card{ background:#fff; border:1px solid var(--line); border-radius:16px; padding:14px 16px; display:flex; align-items:center; justify-content:space-between; gap:10px; cursor:pointer; }
+  .recipe-card{ background:#fff; border:1px solid var(--line); border-radius:14px; padding:13px 16px; display:flex; align-items:center; justify-content:space-between; gap:10px; cursor:pointer; }
   .recipe-card-name{ font-family:'Baloo 2', sans-serif; font-size:17px; font-weight:700; color:var(--text); }
   .recipe-card-count{ font-size:12px; color:var(--muted); margin-top:2px; }
 
@@ -1845,13 +1845,11 @@ function renderItemRow(item){
 /* ---------- recipes view ---------- */
 
 function renderRecipes(){
-  const cards = state.recipes.length
-    ? state.recipes.map(r => `
+  const sortedRecipes = [...state.recipes].sort((a, b) => a.name.localeCompare(b.name));
+  const cards = sortedRecipes.length
+    ? sortedRecipes.map(r => `
         <div class="recipe-card" data-action="open-recipe" data-id="${r.id}">
-          <div>
-            <div class="recipe-card-name">${escapeHtml(r.name)}</div>
-            <div class="recipe-card-count">${r.ingredients.length} ingredient${r.ingredients.length === 1 ? "" : "s"}${(r.instructions && r.instructions.length) ? ` · ${r.instructions.length} step${r.instructions.length === 1 ? "" : "s"}` : ""}</div>
-          </div>
+          <div class="recipe-card-name">${escapeHtml(r.name)}</div>
           ${ICONS.bookSmall}
         </div>`).join("")
     : `<div class="empty-state">No recipes yet. Add your first family favorite below.</div>`;
@@ -1864,7 +1862,7 @@ function renderRecipes(){
           <button class="add-btn" style="background:#7B5EA7" data-action="new-recipe" aria-label="New recipe">${ICONS.plusWhite}</button>
         </div>
       </div>
-      <div class="list-area">${cards}</div>
+      <div class="list-area" style="gap:8px;">${cards}</div>
     </div>`;
 }
 
@@ -1949,7 +1947,10 @@ function renderRecipeEditorOverlay(){
     </div>`;
 
   const manualModeHtml = `
-    <input class="recipe-name-input" placeholder="Recipe name" value="${escapeHtml(state.recipeDraftName)}" data-role="recipe-name-input" />
+    <div style="display:flex; align-items:center; gap:10px;">
+      <input class="recipe-name-input" style="flex:1;" placeholder="Recipe name" value="${escapeHtml(state.recipeDraftName)}" data-role="recipe-name-input" />
+      <button class="header-save-btn" data-action="save-recipe">Save</button>
+    </div>
 
     <div class="recipe-section-label">Ingredients</div>
     ${!state.ingredientsPasteOpen ? `
@@ -1994,7 +1995,7 @@ function renderRecipeEditorOverlay(){
         <div class="header" style="padding:16px 20px 12px;">
           <button class="back-btn" data-action="back-from-recipe-editor" aria-label="Back">${ICONS.arrowLeft}</button>
           <div class="header-title" style="color:#7B5EA7">${isNew ? "New Recipe" : "Edit Recipe"}</div>
-          ${showUrlMode ? `<div style="width:36px"></div>` : `<button class="header-save-btn" data-action="save-recipe">Save</button>`}
+          <div style="width:36px"></div>
         </div>
         <div class="recipe-form" style="padding:0 20px 40px; overflow-y:auto; flex:1;">
           ${modeTabsHtml}
