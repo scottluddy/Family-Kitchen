@@ -2035,19 +2035,19 @@ function renderMonthBlock(year, monthIndex, todayKey){
     assignLanes(segments);
 
     const dayBgHtml = week.map((d, colIdx) => {
+      if (d.getMonth() !== monthIndex) return "";
       const key = isoDate(d);
       const isToday = key === todayKey;
-      const isOtherMonth = d.getMonth() !== monthIndex;
       const left = (colIdx / 7 * 100).toFixed(4);
       const width = (100 / 7).toFixed(4);
       return `
-        <div class="calendar-day-bg ${isToday ? "today" : ""} ${isOtherMonth ? "other-month" : ""}" data-action="open-day" data-date="${key}" style="left:${left}%; width:${width}%; ${colIdx === 6 ? "border-right:none;" : ""}"></div>`;
+        <div class="calendar-day-bg ${isToday ? "today" : ""}" data-action="open-day" data-date="${key}" style="left:${left}%; width:${width}%; ${colIdx === 6 ? "border-right:none;" : ""}"></div>`;
     }).join("");
 
     const dayNumHtml = week.map((d, colIdx) => {
+      if (d.getMonth() !== monthIndex) return "";
       const key = isoDate(d);
-      const isOtherMonth = d.getMonth() !== monthIndex;
-      return `<div class="calendar-daynum ${isOtherMonth ? "other-month" : ""}" data-action="open-day" data-date="${key}" style="grid-column:${colIdx + 1}; grid-row:1;">${d.getDate()}</div>`;
+      return `<div class="calendar-daynum" data-action="open-day" data-date="${key}" style="grid-column:${colIdx + 1}; grid-row:1;">${d.getDate()}</div>`;
     }).join("");
 
     const barsHtml = segments.map(seg => {
