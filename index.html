@@ -178,11 +178,12 @@
 
   .calendar-grid-wrap{ margin:0 20px 6px; border-top:1px solid var(--line); border-left:1px solid var(--line); border-radius:12px; overflow:hidden; background:#fff; }
   .calendar-week{ position:relative; min-height:56px; }
-  .calendar-day-bg{ position:absolute; top:0; bottom:0; border-right:1px solid var(--line); border-bottom:1px solid var(--line); cursor:pointer; z-index:0; }
-  .calendar-day-bg.other-month{ opacity:0.38; }
+  .calendar-day-bg{ position:absolute; top:0; bottom:0; background:#fff; border-right:1px solid var(--line); border-bottom:1px solid var(--line); cursor:pointer; z-index:0; }
+  .calendar-day-bg.other-month{ background:#FAFAF7; }
   .calendar-day-bg.today{ outline:2px solid #1F8A8C; outline-offset:-2px; border-radius:4px; }
   .calendar-content-grid{ position:relative; z-index:1; display:grid; grid-template-columns:repeat(7,1fr); grid-auto-rows:min-content; pointer-events:none; padding-top:4px; }
   .calendar-daynum{ pointer-events:auto; cursor:pointer; width:22px; height:22px; border-radius:999px; display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:700; color:var(--text); margin:0 auto 2px; }
+  .calendar-daynum.other-month{ color:#C5CAD1; }
   .calendar-event-bar{ height:6px; margin:2px 0; pointer-events:none; }
 
   .day-overlay-header{ display:flex; align-items:center; justify-content:space-between; padding:2px 0 14px; }
@@ -195,6 +196,9 @@
   .form-label{ font-size:12px; font-weight:800; letter-spacing:0.5px; color:var(--muted); text-transform:uppercase; margin-top:14px; margin-bottom:6px; }
   .form-input{ width:100%; border:1px solid var(--line); border-radius:12px; padding:11px 13px; font-family:'Nunito Sans', sans-serif; font-size:15px; color:var(--text); outline:none; }
   .form-row{ display:flex; gap:10px; }
+  .allday-btn{ display:inline-flex; align-items:center; gap:6px; font-size:13px; font-weight:700; padding:9px 16px; border-radius:999px; border:1px solid var(--line); background:#fff; color:var(--text); cursor:pointer; }
+  .allday-btn.active{ background:#1F8A8C; color:#fff; border-color:#1F8A8C; }
+  .form-input:disabled{ opacity:0.5; background:#F3F3F3; cursor:not-allowed; }
   .form-row > div{ flex:1; }
 </style>
 </head>
@@ -434,6 +438,7 @@ const state = {
   eventDraftStartTime: "",
   eventDraftEndTime: "",
   eventDraftEndDate: "",
+  eventDraftAllDay: false,
   pendingFocus: null, // selector to focus after next render
 
   // Auth
@@ -1292,6 +1297,8 @@ function openDay(dateKey){
   render();
 }
 function closeDayOverlay(){
+  const d = new Date(state.calendarSelectedDate + "T00:00:00");
+  state.calendarScrollToKey = `${d.getFullYear()}-${d.getMonth()}`;
   state.calendarSelectedDate = null;
   render();
 }
@@ -1300,8 +1307,9 @@ function openAddEvent(){
   state.eventDraftId = "new";
   state.eventDraftName = "";
   state.eventDraftStartTime = "08:00";
-  state.eventDraftEndTime = "08:00";
+  state.eventDraftEndTime = addMinutesToTime("08:00", 30);
   state.eventDraftEndDate = state.calendarSelectedDate;
+  state.eventDraftAllDay = false;
   state.pendingFocus = '[data-role="event-name-input"]';
   render();
 }
@@ -1311,9 +1319,14 @@ function openEditEvent(id){
   state.dayOverlayMode = "form";
   state.eventDraftId = id;
   state.eventDraftName = ev.name;
-  state.eventDraftStartTime = ev.startTime || "";
-  state.eventDraftEndTime = ev.endTime || "";
+  state.eventDraftStartTime = ev.startTime || "08:00";
+  state.eventDraftEndTime = ev.endTime || addMinutesToTime(ev.startTime || "08:00", 30);
   state.eventDraftEndDate = ev.endDate;
+  state.eventDraftAllDay = !ev.startTime;
+  render();
+}
+function toggleAllDay(){
+  state.eventDraftAllDay = !state.eventDraftAllDay;
   render();
 }
 function cancelEventForm(){
@@ -1326,18 +1339,20 @@ async function saveEvent(){
   const startDate = state.calendarSelectedDate;
   let endDate = (state.eventDraftEndDate || startDate).trim();
   if (endDate < startDate) endDate = startDate;
+  const startTime = state.eventDraftAllDay ? "" : state.eventDraftStartTime;
+  const endTime = state.eventDraftAllDay ? "" : state.eventDraftEndTime;
 
   if (state.eventDraftId === "new"){
     const newEvent = {
       id: `${Date.now()}-${Math.random().toString(36).slice(2,7)}`,
       name, startDate, endDate,
-      startTime: state.eventDraftStartTime, endTime: state.eventDraftEndTime,
+      startTime, endTime,
       color: colorForNewEvent(),
     };
     state.events.push(newEvent);
   } else {
     state.events = state.events.map(e => e.id === state.eventDraftId
-      ? { ...e, name, endDate, startTime: state.eventDraftStartTime, endTime: state.eventDraftEndTime }
+      ? { ...e, name, endDate, startTime, endTime }
       : e);
   }
   state.dayOverlayMode = "list";
@@ -2031,7 +2046,8 @@ function renderMonthBlock(year, monthIndex, todayKey){
 
     const dayNumHtml = week.map((d, colIdx) => {
       const key = isoDate(d);
-      return `<div class="calendar-daynum" data-action="open-day" data-date="${key}" style="grid-column:${colIdx + 1}; grid-row:1;">${d.getDate()}</div>`;
+      const isOtherMonth = d.getMonth() !== monthIndex;
+      return `<div class="calendar-daynum ${isOtherMonth ? "other-month" : ""}" data-action="open-day" data-date="${key}" style="grid-column:${colIdx + 1}; grid-row:1;">${d.getDate()}</div>`;
     }).join("");
 
     const barsHtml = segments.map(seg => {
@@ -2091,14 +2107,16 @@ function renderDayOverlay(){
             <div class="form-label" style="margin-top:14px;">Event name</div>
             <input class="form-input" placeholder="e.g. Soccer practice" value="${escapeHtml(state.eventDraftName)}" data-role="event-name-input" />
 
+            <button type="button" class="allday-btn ${state.eventDraftAllDay ? "active" : ""}" style="margin-top:14px;" data-action="toggle-all-day">${state.eventDraftAllDay ? ICONS.check : ""} All Day</button>
+
             <div class="form-row">
               <div>
                 <div class="form-label">Start time</div>
-                <input class="form-input" type="time" step="900" value="${escapeHtml(state.eventDraftStartTime)}" data-role="event-start-time-input" />
+                <input class="form-input" type="time" step="900" value="${escapeHtml(state.eventDraftStartTime)}" data-role="event-start-time-input" ${state.eventDraftAllDay ? "disabled" : ""} />
               </div>
               <div>
                 <div class="form-label">End time</div>
-                <input class="form-input" type="time" step="900" value="${escapeHtml(state.eventDraftEndTime)}" data-role="event-end-time-input" />
+                <input class="form-input" type="time" step="900" value="${escapeHtml(state.eventDraftEndTime)}" data-role="event-end-time-input" ${state.eventDraftAllDay ? "disabled" : ""} />
               </div>
             </div>
 
@@ -2155,6 +2173,13 @@ function renderDayOverlay(){
         </div>
       </div>
     </div>`;
+}
+function addMinutesToTime(time, minutesToAdd){
+  const [h, m] = time.split(":").map(Number);
+  let total = h * 60 + m + minutesToAdd;
+  total = ((total % 1440) + 1440) % 1440;
+  const nh = Math.floor(total / 60), nm = total % 60;
+  return `${String(nh).padStart(2, "0")}:${String(nm).padStart(2, "0")}`;
 }
 function formatTime(t){
   if (!t) return "";
@@ -2229,6 +2254,7 @@ document.addEventListener("click", (e) => {
   else if (action === "edit-event") openEditEvent(el.dataset.id);
   else if (action === "cancel-event-form") cancelEventForm();
   else if (action === "save-event") saveEvent();
+  else if (action === "toggle-all-day") toggleAllDay();
   else if (action === "delete-event") deleteEvent(el.dataset.id);
 });
 
@@ -2284,6 +2310,11 @@ document.addEventListener("change", (e) => {
     changeItemCategory(state.activeList, el.dataset.id, el.value);
   } else if (el.dataset.action === "toggle-module"){
     toggleModuleVisibility(el.dataset.target);
+  } else if (el.dataset.role === "event-start-time-input"){
+    if (!state.eventDraftAllDay && state.eventDraftStartTime){
+      state.eventDraftEndTime = addMinutesToTime(state.eventDraftStartTime, 30);
+      render();
+    }
   }
 });
 
