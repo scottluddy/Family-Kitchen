@@ -2048,10 +2048,19 @@ function renderMonthBlock(year, monthIndex, todayKey){
       return `<div class="calendar-daynum" data-action="open-day" data-date="${key}" style="grid-column:${colIdx + 1}; grid-row:1;">${d.getDate()}</div>`;
     }).join("");
 
+    const monthCols = week.map((d, i) => d.getMonth() === monthIndex ? i : -1).filter(i => i >= 0);
+    const monthMinCol = monthCols.length ? Math.min(...monthCols) : 0;
+    const monthMaxCol = monthCols.length ? Math.max(...monthCols) : 6;
+
     const barsHtml = segments.map(seg => {
-      const radiusTL = seg.capLeft ? "4px" : "0";
-      const radiusTR = seg.capRight ? "4px" : "0";
-      return `<div class="calendar-event-bar" title="${escapeHtml(seg.event.name)}" style="grid-row:${seg.lane + 2}; grid-column:${seg.startCol + 1} / ${seg.endCol + 2}; background:${seg.event.color}; border-radius:${radiusTL} ${radiusTR} ${radiusTR} ${radiusTL};"></div>`;
+      const clippedStart = Math.max(seg.startCol, monthMinCol);
+      const clippedEnd = Math.min(seg.endCol, monthMaxCol);
+      if (clippedStart > clippedEnd) return ""; // this event doesn't touch any visible day in this row
+      const capLeft = seg.capLeft || clippedStart > seg.startCol;
+      const capRight = seg.capRight || clippedEnd < seg.endCol;
+      const radiusTL = capLeft ? "4px" : "0";
+      const radiusTR = capRight ? "4px" : "0";
+      return `<div class="calendar-event-bar" title="${escapeHtml(seg.event.name)}" style="grid-row:${seg.lane + 2}; grid-column:${clippedStart + 1} / ${clippedEnd + 2}; background:${seg.event.color}; border-radius:${radiusTL} ${radiusTR} ${radiusTR} ${radiusTL};"></div>`;
     }).join("");
 
     return `
