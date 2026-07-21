@@ -392,7 +392,6 @@ const state = {
   ready: false,
   mealPlan: {}, // { dateKey: [ {id, text, recipeId|null} ] }
   mealDaySelectedDate: null, // dateKey when the full-screen meal day view is open, else null
-  mealDayAddMode: "closed", // "closed" | "choice" | "manual"
   mealDraftText: "",
   lists: ["Main"],
   activeList: "Main",
@@ -431,6 +430,7 @@ const state = {
   })(),
   calendarScrollToKey: null, // "year-monthIndex" to scroll into view after next render, else null
   calendarNotifOpen: false,
+  addToMealPlanRecipeId: null, // recipe id currently choosing a day for, else null
   events: [],
   calendarSelectedDate: null, // dateKey when the day overlay is open, else null
   dayOverlayMode: "list", // "list" | "form"
@@ -1152,26 +1152,11 @@ async function deleteRecipe(id){
 
 function openMealDay(dateKey){
   state.mealDaySelectedDate = dateKey;
-  state.mealDayAddMode = "closed";
+  state.mealDraftText = "";
   render();
 }
 function closeMealDay(){
   state.mealDaySelectedDate = null;
-  state.mealDayAddMode = "closed";
-  render();
-}
-function openAddMealChoice(){
-  state.mealDayAddMode = "choice";
-  render();
-}
-function openAddMealManual(){
-  state.mealDayAddMode = "manual";
-  state.mealDraftText = "";
-  state.pendingFocus = '[data-role="meal-draft-input"]';
-  render();
-}
-function cancelAddMeal(){
-  state.mealDayAddMode = "closed";
   render();
 }
 async function addManualMeal(){
@@ -1180,7 +1165,8 @@ async function addManualMeal(){
   const dateKey = state.mealDaySelectedDate;
   const newMeal = { id: `${Date.now()}-${Math.random().toString(36).slice(2,7)}`, text, recipeId: null };
   state.mealPlan[dateKey] = [...(state.mealPlan[dateKey] || []), newMeal];
-  state.mealDayAddMode = "closed";
+  state.mealDraftText = "";
+  state.pendingFocus = '[data-role="meal-draft-input"]';
   render();
   await saveJSON("mealplan-data", state.mealPlan);
 }
@@ -1211,10 +1197,29 @@ async function pickRecipeForDate(dateKey, recipeId){
   const newMeal = { id: `${Date.now()}-${Math.random().toString(36).slice(2,7)}`, text: r.name, recipeId: r.id };
   state.mealPlan[dateKey] = [...(state.mealPlan[dateKey] || []), newMeal];
   state.recipePickerForDate = null;
-  state.mealDayAddMode = "closed";
   render();
   await saveJSON("mealplan-data", state.mealPlan);
 }
+
+function openAddToMealPlanPicker(recipeId){
+  state.addToMealPlanRecipeId = recipeId;
+  render();
+}
+function closeAddToMealPlanPicker(){
+  state.addToMealPlanRecipeId = null;
+  render();
+}
+async function pickDayForRecipe(dateKey){
+  const recipeId = state.addToMealPlanRecipeId;
+  const r = state.recipes.find(r => r.id === recipeId);
+  if (!r) return;
+  const newMeal = { id: `${Date.now()}-${Math.random().toString(36).slice(2,7)}`, text: r.name, recipeId: r.id };
+  state.mealPlan[dateKey] = [...(state.mealPlan[dateKey] || []), newMeal];
+  state.addToMealPlanRecipeId = null;
+  render();
+  await saveJSON("mealplan-data", state.mealPlan);
+}
+
 async function addMealIngredientsToGrocery(dateKey, mealId){
   const meal = (state.mealPlan[dateKey] || []).find(m => m.id === mealId);
   if (!meal || !meal.recipeId) return;
@@ -1462,6 +1467,9 @@ function render(){
   if (state.calendarNotifOpen){
     html += renderCalendarNotifications();
   }
+  if (state.addToMealPlanRecipeId){
+    html += renderAddToMealPlanPicker();
+  }
 
   app.innerHTML = html;
 
@@ -1689,26 +1697,13 @@ function renderMealDayOverlay(){
         </div>`).join("")
     : `<div class="empty-state">No meals planned for this day yet.</div>`;
 
-  let addSectionHtml = "";
-  if (state.mealDayAddMode === "choice"){
-    addSectionHtml = `
-      <div style="display:flex; flex-direction:column; gap:10px; margin-top:14px;">
-        <button class="btn-primary" style="background:var(--navy);" data-action="open-add-meal-manual">Type a Meal</button>
-        <button class="btn-primary" style="background:#7B5EA7;" data-action="open-recipe-picker-from-meal" data-date="${dateKey}">Choose from Recipes</button>
-        <button class="picker-close" data-action="cancel-add-meal">Cancel</button>
-      </div>`;
-  } else if (state.mealDayAddMode === "manual"){
-    addSectionHtml = `
-      <div style="margin-top:14px;">
-        <input class="form-input" placeholder="e.g. Tacos" value="${escapeHtml(state.mealDraftText)}" data-role="meal-draft-input" />
-        <div style="display:flex; gap:10px; margin-top:10px;">
-          <button class="btn-primary" style="background:var(--navy);" data-action="save-manual-meal">Add Meal</button>
-          <button class="picker-close" style="flex:none;" data-action="cancel-add-meal">Cancel</button>
-        </div>
-      </div>`;
-  } else {
-    addSectionHtml = `<button class="event-add-btn" style="background:var(--navy);" data-action="open-add-meal-choice">${ICONS.plusWhite} Add Meal</button>`;
-  }
+  const addSectionHtml = `
+    <div class="recipe-section-label" style="margin-top:18px;">Add a Meal</div>
+    <div class="add-box">
+      <input class="add-input" placeholder="Type a meal…" value="${escapeHtml(state.mealDraftText)}" data-role="meal-draft-input" />
+      <button class="add-btn" style="background:var(--navy)" data-action="save-manual-meal" aria-label="Add meal">${ICONS.plusWhite}</button>
+    </div>
+    <button class="btn-primary" style="background:#7B5EA7; width:100%; margin-top:10px;" data-action="open-recipe-picker-from-meal" data-date="${dateKey}">Choose from Recipes</button>`;
 
   return `
     <div class="picker-overlay" style="align-items:stretch;">
@@ -1726,10 +1721,38 @@ function renderMealDayOverlay(){
     </div>`;
 }
 
+function renderAddToMealPlanPicker(){
+  const recipe = state.recipes.find(r => r.id === state.addToMealPlanRecipeId);
+  const days = nextSevenDays();
+  const rows = days.map((d, idx) => {
+    const key = isoDate(d);
+    const isToday = idx === 0;
+    const meals = state.mealPlan[key] || [];
+    const summary = meals.length
+      ? `${escapeHtml(meals[0].text)}${meals.length > 1 ? ` <span class="picker-row-count">+${meals.length - 1} more</span>` : ""}`
+      : `<span class="picker-row-count">No meals planned</span>`;
+    return `
+      <div class="picker-row" data-action="pick-day-for-recipe" data-date="${key}">
+        <span class="picker-row-name">${isToday ? "Today · " : ""}${DAY_NAMES[d.getDay()]} ${MONTH_NAMES[d.getMonth()]} ${d.getDate()}</span>
+        <span style="text-align:right; font-size:13px; color:var(--muted);">${summary}</span>
+      </div>`;
+  }).join("");
+
+  return `
+    <div class="picker-overlay" data-action="close-add-to-meal-plan">
+      <div class="picker-sheet" data-stop-close="true">
+        <div class="picker-title">Add "${escapeHtml(recipe ? recipe.name : "")}" to which day?</div>
+        ${rows}
+        <button class="picker-close" data-action="close-add-to-meal-plan">Cancel</button>
+      </div>
+    </div>`;
+}
+
 function renderRecipePickerOverlay(){
   const dateKey = state.recipePickerForDate;
-  const rows = state.recipes.length
-    ? state.recipes.map(r => `
+  const sortedRecipes = [...state.recipes].sort((a, b) => a.name.localeCompare(b.name));
+  const rows = sortedRecipes.length
+    ? sortedRecipes.map(r => `
         <div class="picker-row" data-action="pick-recipe" data-date="${dateKey}" data-recipe-id="${r.id}">
           <span class="picker-row-name">${escapeHtml(r.name)}</span>
           <span class="picker-row-count">${r.ingredients.length} ingredient${r.ingredients.length === 1 ? "" : "s"}</span>
@@ -1900,6 +1923,8 @@ function renderRecipeEditorOverlay(){
               <div class="recipe-view-name">${escapeHtml(r.name)}</div>
               <button class="icon-btn" data-action="edit-recipe-from-view" aria-label="Edit recipe" title="Edit recipe">${ICONS.pencil}</button>
             </div>
+
+            <button class="btn-primary" style="background:var(--navy); width:100%; margin-top:14px; display:inline-flex; align-items:center; justify-content:center; gap:8px;" data-action="open-add-to-meal-plan" data-id="${r.id}">${ICONS.calendar} Add to Meal Plan</button>
 
             <div class="recipe-section-label" style="margin-top:18px;">Ingredients</div>
             ${viewIngredientsHtml}
@@ -2292,12 +2317,12 @@ document.addEventListener("click", (e) => {
   else if (action === "open-recipe-picker") openRecipePicker(el.dataset.date);
   else if (action === "open-recipe-picker-from-meal") openRecipePicker(el.dataset.date);
   else if (action === "close-recipe-picker") closeRecipePicker();
+  else if (action === "open-add-to-meal-plan") openAddToMealPlanPicker(el.dataset.id);
+  else if (action === "close-add-to-meal-plan") closeAddToMealPlanPicker();
+  else if (action === "pick-day-for-recipe") pickDayForRecipe(el.dataset.date);
   else if (action === "pick-recipe") pickRecipeForDate(el.dataset.date, el.dataset.recipeId);
   else if (action === "open-meal-day") openMealDay(el.dataset.date);
   else if (action === "close-meal-day") closeMealDay();
-  else if (action === "open-add-meal-choice") openAddMealChoice();
-  else if (action === "open-add-meal-manual") openAddMealManual();
-  else if (action === "cancel-add-meal") cancelAddMeal();
   else if (action === "save-manual-meal") addManualMeal();
   else if (action === "remove-meal") removeMeal(el.dataset.date, el.dataset.id);
   else if (action === "add-meal-groceries") addMealIngredientsToGrocery(el.dataset.date, el.dataset.id);
